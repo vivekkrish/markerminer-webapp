@@ -1,0 +1,50 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "bootstrap/fixes.html" as fixes %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="span12">
+                <h1 class="page-header">{{ folder.name }}</h1>
+            </div>
+        </div>
+        {% if folder.chunks %}
+        <ul class="breadcrumb">
+            {% for chunk in folder.chunks() %}
+                <li>
+                    <a href="/results/{{ chunk.path }}">{{ chunk.chunk }}</a>
+                    <span class="divider">/</span>
+                </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="row">
+            <div class="span6">
+                <ul class="nav nav-tabs nav-stacked">
+                {% for folder in folder.folders %}
+                    <li><a href="/results/{{ folder.path }}">{{ folder.name }}</a></li>
+                {% endfor %}
+                </ul>
+            </div>
+            <div class="span6">
+                <h3>Files:</h3>
+                <ul class="list-group">
+                {% for file in folder.files %}
+                    <li class="list-group-item">
+                        {{ file.name }}&nbsp;&nbsp;
+                        <a href="/results/{{ file.path }}" title="View" alt="View" class="glyphicon glyphicon-eye-open"></a>&nbsp;&nbsp;
+                        <a href="/results/download/{{ file.path }}" title="Download" alt="Download" class="glyphicon glyphicon-download"></a>
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block head %}
+{{super()}}
+{{fixes.ie8()}}
+{% endblock %}
