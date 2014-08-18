@@ -2,6 +2,7 @@
 
 import os
 import os.path as op
+import sys
 import subprocess
 import time
 from os import error
@@ -95,7 +96,7 @@ def build_transcript_files_list(files, dir):
 def build_job_cmd(form, files, upload_dir, results_dir, debug=False):
     filePaths = build_transcript_files_list(files, upload_dir)
     job_cmd = [op.join(SCRIPT_PATH, 'pipeline', \
-        'single_gene_identification_V2.py'), \
+        'single_gene_identification.py'), \
         '-transcriptFilePaths', filePaths, \
         '-singleCopyReference', form.singleCopyReference.data, \
         '-minTranscriptLen', form.minTranscriptLen.data, \
@@ -122,6 +123,7 @@ def upload_files(form, dir):
 
     return files
 
+
 def create_app(configfile=None):
     app = Flask(__name__)
     AppConfig(app, configfile)
@@ -132,22 +134,27 @@ def create_app(configfile=None):
     def index():
         form = JobSubmitForm(singleCopyReference="Athaliana" , minTranscriptLen=900, \
             minProteinCoverage=80, minTranscriptCoverage=70, minSimilarity=70, cpus=3)
+
         if request.method == 'POST' and form.validate_on_submit(): # to get error messages to the browser
             ts = str(int(time.time()))
             UPLOADS_DIRECTORY = op.join(app.config['UPLOADS_DIRECTORY'], ts)
             RESULTS_DIRECTORY = UPLOADS_DIRECTORY.replace('uploads', 'results')
             files = upload_files(form, UPLOADS_DIRECTORY)
-
-            cmd = build_job_cmd(form, files, UPLOADS_DIRECTORY, RESULTS_DIRECTORY, debug=app.config['DEBUG'])
             email = form.email.data
+            cmd = build_job_cmd(form, files, UPLOADS_DIRECTORY, RESULTS_DIRECTORY, debug=app.config['DEBUG'])
 
             return redirect(url_for('submit', cmd=cmd, email=email, result_url=op.join(request.url_root, 'results', ts)))
 
         return render_template('index.html', form=form)
 
+    @app.route('/help')
+    def help():
+        return render_template('help.html')
+
     @app.route('/submit')
     def submit():
-        cmd, email, result_url = request.args['cmd'], request.args['email'], request.args['result_url']
+        cmd, email, request_url = request.args['cmd'], request.args['email'], request.args['request_url']
+        
         subprocess.Popen(cmd.split(" "), shell=False)
         mandrill.send_email(
             to=[{'email': email}],
@@ -155,10 +162,11 @@ def create_app(configfile=None):
                  'The following command was submitted:\n\n {0}\n\n'.format(cmd) + 
                  'Your results will be accessible at: {0}'.format(result_url)
         )
+
         return render_template('submit.html', cmd=cmd, email=email, result_url=result_url)
 
     @app.route('/results/<path:path>')
-    def browser(path=''):
+    def browser(path=None):
         path_join = os.path.join(app.config['RESULTS_DIRECTORY'], path)
         if os.path.isdir(path_join):
             folder = Folder(app.config['RESULTS_DIRECTORY'], path)

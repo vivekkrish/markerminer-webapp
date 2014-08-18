@@ -1,12 +1,11 @@
-{% extends "bootstrap/base.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
-{% import "bootstrap/fixes.html" as fixes %}
+{% extends "base.html" %}
+
+{% set active_page = "home" %}
 
 {% block content %}
 <div class="container">
-  <h1>MarkerMiner Job Submission Webapp</h1>
 
-  <h2>Run MarkerMiner</h2>
+  <h2>Submit Job</h2>
   {{ wtf.quick_form(form, enctype='multipart/form-data', button_map={'submit_button': 'primary'}) }}
 
 </div>
@@ -21,9 +20,4 @@
   {% endif %}
 {% endwith %}
 
-{% endblock %}
-
-{% block head %}
-{{super()}}
-{{fixes.ie8()}}
 {% endblock %}

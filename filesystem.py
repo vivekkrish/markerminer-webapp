@@ -56,7 +56,6 @@ class Folder(Node):
             chunk_path = join(chunk_path, chunk)
             yield {'chunk': chunk, 'path': chunk_path}
 
-
     def read(self):
         for node in os.listdir(join(self.root, self.path)):
             full_path = join(self.path, node)

@@ -1,4 +1,4 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
 
 {% block content %}
 	{% if folder.chunks %}
@@ -11,5 +11,4 @@
 		{% endfor %}
 	</ul>
 	{% endif %}
-    <h2>Невозможно открыть файл</h2>
 {% endblock %}

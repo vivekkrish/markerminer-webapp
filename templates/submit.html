@@ -1,6 +1,4 @@
-{% extends "bootstrap/base.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
-{% import "bootstrap/fixes.html" as fixes %}
+{% extends "base.html" %}
 
 {% block content %}
 <div class="container">
@@ -8,9 +6,4 @@
   Sending email notification to: {{ email }}<br />
   Your results will be accessible at: <a href="{{ result_url }}">{{ result_url }}</a>
 </div>
-{% endblock %}
-
-{% block head %}
-{{super()}}
-{{fixes.ie8()}}
 {% endblock %}
