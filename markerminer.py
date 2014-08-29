@@ -3,8 +3,11 @@
 import os
 import os.path as op
 import sys
+import errno
+import shlex
 import subprocess
-import time
+import re
+from tempfile import mkdtemp
 from os import error
 from multiprocessing import cpu_count
 
@@ -15,13 +18,14 @@ from flask_appconfig import AppConfig
 
 from flask_wtf import Form
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms.widgets import FileInput as _FileInput
 
-from werkzeug.utils import secure_filename
 from wtforms import StringField, IntegerField, FloatField, SelectField, \
     FieldList, FormField, SubmitField, ValidationError, validators
+from wtforms.widgets import FileInput as _FileInput
 from wtforms.validators import Required
+from wtforms.compat import string_types
 
+from werkzeug.utils import secure_filename
 from flask.ext.mandrill import Mandrill
 
 from filesystem import Folder, File
@@ -32,8 +36,9 @@ SCRIPT_PATH = op.dirname(op.abspath(__file__))
 choices = [(x, "{0}. {1}".format(x[:1], x[1:])) for x in \
     os.listdir(op.join(SCRIPT_PATH, 'pipeline', 'Resources'))]
 ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fsa', 'fna', 'txt']
-  
-  
+ 
+
+
 class FileInput(_FileInput):
     def __init__(self, multiple=False):
         self.multiple = multiple
@@ -49,10 +54,31 @@ class MultiFileField(FileField):
     widget = FileInput(multiple=True)
 
 
+def regexp(regex, flags=0):
+    regex = re.compile(regex, flags)
+
+    def _regexp(form, field):
+        invalid_files = []
+        for data in form.fileupload.raw_data:
+            filename = data.filename
+            match = regex.match(filename or '')
+            if not match:
+                invalid_files.append(filename)
+                
+        if len(invalid_files) > 0:
+            message = 'Error: Please check following filename(s): {0}'.format([str(x) for x in invalid_files]) + \
+                '. They should be of the form `ABCD-Trans_assembly_1_sample.fa`.'
+
+            raise ValidationError(message)
+
+    return _regexp
+
+
 class JobSubmitForm(Form):
     fileupload = MultiFileField('Input FASTA file(s)', validators=[
         FileRequired(),
-        FileAllowed(ALLOWED_EXTENSIONS, 'Plain-text FASTA file(s) only!')
+        FileAllowed(ALLOWED_EXTENSIONS, 'Plain-text FASTA file(s) only!'),
+        regexp(u'(?=.*-)[a-zA-Z0-9-]+')
     ])
 
     singleCopyReference = SelectField(u'Select single copy transcript reference', \
@@ -83,19 +109,9 @@ def mkdir_p(dir):
         else: raise
 
 
-def build_transcript_files_list(files, dir):
-    filePaths = op.join(dir, "file_paths.txt")
-    fw = open(filePaths, "w")
-    for filename in files:
-        print >> fw, op.join(dir, filename)
-    fw.close()
-
-    return filePaths
-
-
-def build_job_cmd(form, files, upload_dir, results_dir, debug=False):
-    filePaths = build_transcript_files_list(files, upload_dir)
-    job_cmd = [op.join(SCRIPT_PATH, 'pipeline', \
+def build_job_cmd(form, filePaths, upload_dir, results_dir, debug=False):
+    job_cmd = [sys.executable, \
+        op.join(SCRIPT_PATH, 'pipeline', \
         'single_gene_identification.py'), \
         '-transcriptFilePaths', filePaths, \
         '-singleCopyReference', form.singleCopyReference.data, \
@@ -106,14 +122,24 @@ def build_job_cmd(form, files, upload_dir, results_dir, debug=False):
         '-cpus', form.cpus.data, \
         '-outputDirPath', results_dir, \
         '-outputFile', 'single_copy_genes.out', \
-        '-logfileName', 'pipeline_log.out']
+        '-logfileName', 'pipeline_log.out', \
+        '-email', '"{0}"'.format(form.email.data)]
     if debug:
         job_cmd.append('-debug')
     return " ".join(str(x) for x in job_cmd)
 
 
+def build_transcript_files_list(files, dir):
+    filePaths = "{0}.list.txt".format(dir)
+    fw = open(filePaths, "w")
+    for filename in files:
+        print >> fw, op.join(dir, filename)
+    fw.close()
+
+    return filePaths
+
+
 def upload_files(form, dir):
-    mkdir_p(dir)
     files = []
     for data in form.fileupload.raw_data:
         filename = secure_filename(data.filename)
@@ -121,7 +147,27 @@ def upload_files(form, dir):
             data.save(op.join(dir, filename))
             files.append(filename)
 
-    return files
+    return build_transcript_files_list(files, dir)
+
+
+def send_email(mandrill, email, result_url, download_url, cmd, debug=False):
+    if debug == False:
+        cmd = ""
+    email_text = """
+Thank you for using the MarkerMiner pipeline.
+{0}
+
+Results can be browsed/viewed from here: {1}
+
+Once the pipeline has run to completion you will receive an email notification, 
+following which the zip file of the output can be downloaded from here: {2}
+    """.format(cmd, result_url, download_url)
+
+    mandrill.send_email(
+        to = [{ 'email' : email }], 
+        text = email_text,
+        subject = 'MarkerMiner pipeline status: Submitted'
+    )
 
 
 def create_app(configfile=None):
@@ -130,20 +176,29 @@ def create_app(configfile=None):
     Bootstrap(app)
     mandrill = Mandrill(app)
 
-    @app.route('/', methods=('GET', 'POST'))
+    @app.route('/', methods=['GET', 'POST'])
     def index():
-        form = JobSubmitForm(singleCopyReference="Athaliana" , minTranscriptLen=900, \
+        form = JobSubmitForm(singleCopyReference="Athaliana", minTranscriptLen=900, \
             minProteinCoverage=80, minTranscriptCoverage=70, minSimilarity=70, cpus=3)
 
         if request.method == 'POST' and form.validate_on_submit(): # to get error messages to the browser
-            ts = str(int(time.time()))
-            UPLOADS_DIRECTORY = op.join(app.config['UPLOADS_DIRECTORY'], ts)
-            RESULTS_DIRECTORY = UPLOADS_DIRECTORY.replace('uploads', 'results')
-            files = upload_files(form, UPLOADS_DIRECTORY)
-            email = form.email.data
-            cmd = build_job_cmd(form, files, UPLOADS_DIRECTORY, RESULTS_DIRECTORY, debug=app.config['DEBUG'])
+            mkdir_p(app.config['UPLOADS_DIRECTORY'])
+            UPLOADS_DIRECTORY = mkdtemp(dir=app.config['UPLOADS_DIRECTORY'])
+            RESULTS_DIRECTORY = "{0}-output".format(UPLOADS_DIRECTORY)
+            debug = app.config['DEBUG']
 
-            return redirect(url_for('submit', cmd=cmd, email=email, result_url=op.join(request.url_root, 'results', ts)))
+            filePaths = upload_files(form, UPLOADS_DIRECTORY)
+            cmd = build_job_cmd(form, filePaths, UPLOADS_DIRECTORY, RESULTS_DIRECTORY, debug=debug)
+
+            return redirect(
+                url_for(
+                    'submit', cmd=cmd, email=form.email.data, \
+                    result_url=op.join(request.url_root, 'results', \
+                        '{0}-output'.format(op.basename(UPLOADS_DIRECTORY))),
+                    download_url=op.join(request.url_root, 'results', 'download', \
+                        '{0}-output.zip'.format(op.basename(UPLOADS_DIRECTORY)))
+                )
+            )
 
         return render_template('index.html', form=form)
 
@@ -153,36 +208,35 @@ def create_app(configfile=None):
 
     @app.route('/submit')
     def submit():
-        cmd, email, request_url = request.args['cmd'], request.args['email'], request.args['request_url']
+        cmd, email, result_url, download_url = request.args['cmd'], request.args['email'], \
+            request.args['result_url'], request.args['download_url']
         
-        subprocess.Popen(cmd.split(" "), shell=False)
-        mandrill.send_email(
-            to=[{'email': email}],
-            text='Thank you for using the MarkerMiner pipeline.\n\n' + 
-                 'The following command was submitted:\n\n {0}\n\n'.format(cmd) + 
-                 'Your results will be accessible at: {0}'.format(result_url)
-        )
+        debug = app.config['DEBUG']
 
-        return render_template('submit.html', cmd=cmd, email=email, result_url=result_url)
+        subprocess.Popen(shlex.split(cmd), env=os.environ)
+        send_email(mandrill, email, result_url, download_url, cmd, debug=debug)
+
+        return render_template('submit.html', debug=debug, cmd=cmd, email=email, \
+            result_url=result_url, download_url=download_url)
 
     @app.route('/results/<path:path>')
     def browser(path=None):
-        path_join = os.path.join(app.config['RESULTS_DIRECTORY'], path)
-        if os.path.isdir(path_join):
-            folder = Folder(app.config['RESULTS_DIRECTORY'], path)
+        path_join = op.join(app.config['UPLOADS_DIRECTORY'], path)
+        if op.isdir(path_join):
+            folder = Folder(app.config['UPLOADS_DIRECTORY'], path)
             folder.read()
             return render_template('folder.html', folder=folder)
         else:
-            my_file = File(app.config['RESULTS_DIRECTORY'], path)
+            my_file = File(app.config['UPLOADS_DIRECTORY'], path)
             context = my_file.apply_action(View)
-            folder = Folder(app.config['RESULTS_DIRECTORY'], my_file.get_path())
+            folder = Folder(app.config['UPLOADS_DIRECTORY'], my_file.get_path())
             if context == None:
                 return render_template('file_unreadable.html', folder=folder)
             return render_template('file_view.html', text=context['text'], file=my_file, folder=folder)
 
     @app.route('/results/download/<path:path>')
     def download(path=''):
-        return send_from_directory(app.config['RESULTS_DIRECTORY'], path)
+        return send_from_directory(app.config['UPLOADS_DIRECTORY'], path)
 
     return app
 

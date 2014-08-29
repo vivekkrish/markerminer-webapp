@@ -31,7 +31,9 @@
                 {% for file in folder.files %}
                     <li class="list-group-item">
                         {{ file.name }}&nbsp;&nbsp;
+                        {% if 'log' in file.name or 'Log' in file.name %}
                         <a href="/results/{{ file.path }}" title="View" alt="View" class="glyphicon glyphicon-eye-open"></a>&nbsp;&nbsp;
+                        {% endif %}
                         <a href="/results/download/{{ file.path }}" title="Download" alt="Download" class="glyphicon glyphicon-download"></a>
                     </li>
                 {% endfor %}

@@ -2,8 +2,19 @@
 
 {% block content %}
 <div class="container">
-  Submitting job: <pre>{{ cmd }}</pre><br />
-  Sending email notification to: {{ email }}<br />
-  Your results will be accessible at: <a href="{{ result_url }}">{{ result_url }}</a>
+  Job has been submitted successfully.
+  {% if debug is defined %}
+  <pre>{{ cmd }}</pre><br /><br />
+  {% endif %}
+  <p>
+      Sending email notification to: {{ email }}
+  </p>
+  <p>
+      Results can be browsed/viewed from here: <a href="{{ result_url }}">{{ result_url }}</a>
+  </p>
+  <p>
+      Once the pipeline has run to completion, you will receive an email notification,<br />
+      following which the zip file of the output can be downloaded from here: <a href="{{ download_url }}">{{ download_url }}</a>
+  </p>
 </div>
 {% endblock %}
