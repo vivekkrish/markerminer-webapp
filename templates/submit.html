@@ -10,11 +10,21 @@
       Sending email notification to: {{ email }}
   </p>
   <p>
-      Results can be browsed/viewed from here: <a href="{{ result_url }}">{{ result_url }}</a>
+      While the job is in progress, intermediate results and logs can be viewed here: <a href="{{ result_url }}">{{ result_url }}</a>
   </p>
   <p>
-      Once the pipeline has run to completion, you will receive an email notification,<br />
-      following which the zip file of the output can be downloaded from here: <a href="{{ download_url }}">{{ download_url }}</a>
+      Once the job has run to completion you should receive an email notification.<br />
+      At this point, the above link will become inactivated.<br /><br />
+
+      List of putative single copy genes and supporting output files (in zip format) can be downloaded from here: <a href="{{ download_url }}">{{ download_url }}</a>
+  </p>
+  <p>
+      If you use MarkerMiner in your research, please cite us:<br />
+
+      Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I. E.,<br />
+      Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) MarkerMiner 1.0: A new<br /> 
+      bioinformatic workflow and application for phylogenetic marker development<br /> 
+      using angiosperm transcriptomes. Applications in Plant Sciences X: XX-XX
   </p>
 </div>
 {% endblock %}

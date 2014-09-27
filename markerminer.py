@@ -33,9 +33,19 @@ from action import *
 
 
 SCRIPT_PATH = op.dirname(op.abspath(__file__))
-choices = [(x, "{0}. {1}".format(x[:1], x[1:])) for x in \
-    os.listdir(op.join(SCRIPT_PATH, 'pipeline', 'Resources'))]
 ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fsa', 'fna', 'txt']
+ORGANISMS = []
+fp = open(op.join(SCRIPT_PATH, 'pipeline', 'Resources', 'organisms.tsv'), 'r')
+for line in fp:
+    o = line.split('\t')
+    ORGANISMS.append((o[0], o[1]))
+fp.close()
+ORGANISMS.sort(key=lambda x:x[0], reverse=False)
+"""
+ORGANISMS = [(x, "{0}. {1}".format(x[:1], x[1:])) for x in \
+    os.listdir(op.join(SCRIPT_PATH, 'pipeline', 'Resources'))]
+ORGANISMS.sort()
+"""
  
 
 
@@ -75,14 +85,14 @@ def regexp(regex, flags=0):
 
 
 class JobSubmitForm(Form):
-    fileupload = MultiFileField('Input FASTA file(s)', validators=[
+    fileupload = MultiFileField('Input FASTA file(s). <a href="download_sample_data">Download sample dataset</a>', validators=[
         FileRequired(),
         FileAllowed(ALLOWED_EXTENSIONS, 'Plain-text FASTA file(s) only!'),
         regexp(u'(?=.*-)[a-zA-Z0-9-]+')
     ])
 
     singleCopyReference = SelectField(u'Select single copy transcript reference', \
-        choices=list(choices))
+        choices=list(ORGANISMS))
 
     minTranscriptLen = IntegerField('Minimum transcript length')
     minProteinCoverage = FloatField('Minimum percentage of protein length aligned', \
@@ -152,21 +162,32 @@ def upload_files(form, dir):
 
 def send_email(mandrill, email, result_url, download_url, cmd, debug=False):
     if debug == False:
-        cmd = ""
+        cmd = ''
+    subject = 'MarkerMiner pipeline status: Submitted'
     email_text = """
 Thank you for using the MarkerMiner pipeline.
 {0}
 
-Results can be browsed/viewed from here: {1}
+While the job is in progress, intermediate results and logs can be viewed here: {1}
 
-Once the pipeline has run to completion you will receive an email notification, 
-following which the zip file of the output can be downloaded from here: {2}
+Once the job has run to completion you should receive an email notification.
+At this point, the above link will be become inactivated.
+
+List of putative single copy genes and supporting output files 
+(in zip format) can be downloaded from here: {2}
+
+If you use MarkerMiner in your research, please cite us:
+
+Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I. E., 
+Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) MarkerMiner 1.0: A new 
+bioinformatic workflow and application for phylogenetic marker development 
+using angiosperm transcriptomes. Applications in Plant Sciences X: XX-XX
     """.format(cmd, result_url, download_url)
 
     mandrill.send_email(
         to = [{ 'email' : email }], 
+        subject = subject,
         text = email_text,
-        subject = 'MarkerMiner pipeline status: Submitted'
     )
 
 
@@ -179,7 +200,7 @@ def create_app(configfile=None):
     @app.route('/', methods=['GET', 'POST'])
     def index():
         form = JobSubmitForm(singleCopyReference="Athaliana", minTranscriptLen=900, \
-            minProteinCoverage=80, minTranscriptCoverage=70, minSimilarity=70, cpus=3)
+            minProteinCoverage=80, minTranscriptCoverage=70, minSimilarity=70, cpus=1)
 
         if request.method == 'POST' and form.validate_on_submit(): # to get error messages to the browser
             mkdir_p(app.config['UPLOADS_DIRECTORY'])
@@ -237,6 +258,17 @@ def create_app(configfile=None):
     @app.route('/results/download/<path:path>')
     def download(path=''):
         return send_from_directory(app.config['UPLOADS_DIRECTORY'], path)
+
+    @app.route('/download_sample_data')
+    def sample_data():
+        from shutil import make_archive
+
+        sample_data_file = 'Sample_Data'
+        sample_data_path = op.join(SCRIPT_PATH, 'pipeline', sample_data_file)
+        sample_data_zip_base = op.join(app.config['UPLOADS_DIRECTORY'], sample_data_file)
+        make_archive(sample_data_zip_base, format="zip", root_dir=sample_data_path)
+
+        return send_from_directory(app.config['UPLOADS_DIRECTORY'], "{0}.zip".format(sample_data_file))
 
     return app
 
