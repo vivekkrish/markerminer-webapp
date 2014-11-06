@@ -2,10 +2,7 @@
 
 {% block content %}
 <div class="container">
-  Job has been submitted successfully.
-  {% if debug is defined %}
-  <pre>{{ cmd }}</pre><br /><br />
-  {% endif %}
+  Job has been submitted successfully!<br />
   <p>
       Sending email notification to: {{ email }}
   </p>
@@ -19,12 +16,13 @@
       List of putative single copy genes and supporting output files (in zip format) can be downloaded from here: <a href="{{ download_url }}">{{ download_url }}</a>
   </p>
   <p>
-      If you use MarkerMiner in your research, please cite us:<br />
+      If you use MarkerMiner in your research, please cite us:<br /><br />
 
-      Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I. E.,<br />
-      Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) MarkerMiner 1.0: A new<br /> 
-      bioinformatic workflow and application for phylogenetic marker development<br /> 
-      using angiosperm transcriptomes. Applications in Plant Sciences X: XX-XX
+      Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I.E.,<br />
+      DeSmet, R., Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) <br />
+      MarkerMiner 1.0: A new bioinformatic workflow and application for <br />
+      phylogenetic marker development using angiosperm transcriptomes. <br />
+      <cite><em>Applications in Plant Sciences</em></cite> X: XX-XX
   </p>
 </div>
 {% endblock %}

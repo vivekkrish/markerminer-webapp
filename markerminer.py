@@ -131,8 +131,8 @@ def build_job_cmd(form, filePaths, upload_dir, results_dir, debug=False):
         '-minSimilarity', form.minSimilarity.data, \
         '-cpus', form.cpus.data, \
         '-outputDirPath', results_dir, \
-        '-outputFile', 'single_copy_genes.out', \
-        '-logfileName', 'pipeline_log.out', \
+        '-outputFile', 'single_copy_genes.txt', \
+        '-logfileName', 'pipeline_log.txt', \
         '-email', '"{0}"'.format(form.email.data)]
     if debug:
         job_cmd.append('-debug')
@@ -160,9 +160,12 @@ def upload_files(form, dir):
     return build_transcript_files_list(files, dir)
 
 
-def send_email(mandrill, email, result_url, download_url, cmd, debug=False):
-    if debug == False:
-        cmd = ''
+def submit_job(cmd):
+    subprocess.Popen(shlex.split(cmd), env=os.environ)
+    return
+
+
+def send_email(mandrill, email, result_url, download_url, cmd):
     subject = 'MarkerMiner pipeline status: Submitted'
     email_text = """
 Thank you for using the MarkerMiner pipeline.
@@ -179,9 +182,10 @@ List of putative single copy genes and supporting output files
 If you use MarkerMiner in your research, please cite us:
 
 Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I. E., 
-Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) MarkerMiner 1.0: A new 
-bioinformatic workflow and application for phylogenetic marker development 
-using angiosperm transcriptomes. Applications in Plant Sciences X: XX-XX
+DeSmet, R., Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) 
+MarkerMiner 1.0: A new bioinformatic workflow and application for 
+phylogenetic marker development using angiosperm transcriptomes. 
+Applications in Plant Sciences X: XX-XX
     """.format(cmd, result_url, download_url)
 
     mandrill.send_email(
@@ -210,15 +214,21 @@ def create_app(configfile=None):
 
             filePaths = upload_files(form, UPLOADS_DIRECTORY)
             cmd = build_job_cmd(form, filePaths, UPLOADS_DIRECTORY, RESULTS_DIRECTORY, debug=debug)
+    
+            email = form.email.data
+            output_basename = '{0}-output'.format(op.basename(UPLOADS_DIRECTORY))
+            result_url = op.join(request.url_root, 'results', output_basename)
+            download_url = op.join(request.url_root, 'results', 'download', \
+                '{0}.zip'.format(output_basename))
+
+            # submit job and send email
+            submit_job(cmd)
+            _cmd = cmd if debug else ''
+            send_email(mandrill, email, result_url, download_url, _cmd)
 
             return redirect(
-                url_for(
-                    'submit', cmd=cmd, email=form.email.data, \
-                    result_url=op.join(request.url_root, 'results', \
-                        '{0}-output'.format(op.basename(UPLOADS_DIRECTORY))),
-                    download_url=op.join(request.url_root, 'results', 'download', \
-                        '{0}-output.zip'.format(op.basename(UPLOADS_DIRECTORY)))
-                )
+                url_for('submit', email=email, result_url=result_url, \
+                        download_url=download_url)
             )
 
         return render_template('index.html', form=form)
@@ -229,16 +239,11 @@ def create_app(configfile=None):
 
     @app.route('/submit')
     def submit():
-        cmd, email, result_url, download_url = request.args['cmd'], request.args['email'], \
+        email, result_url, download_url = request.args['email'], \
             request.args['result_url'], request.args['download_url']
         
-        debug = app.config['DEBUG']
-
-        subprocess.Popen(shlex.split(cmd), env=os.environ)
-        send_email(mandrill, email, result_url, download_url, cmd, debug=debug)
-
-        return render_template('submit.html', debug=debug, cmd=cmd, email=email, \
-            result_url=result_url, download_url=download_url)
+        return render_template('submit.html', email=email, result_url=result_url, \
+            download_url=download_url)
 
     @app.route('/results/<path:path>')
     def browser(path=None):
@@ -263,12 +268,12 @@ def create_app(configfile=None):
     def sample_data():
         from shutil import make_archive
 
-        sample_data_file = 'Sample_Data'
-        sample_data_path = op.join(SCRIPT_PATH, 'pipeline', sample_data_file)
-        sample_data_zip_base = op.join(app.config['UPLOADS_DIRECTORY'], sample_data_file)
+        sample_data_dir = 'Sample_Data'
+        sample_data_path = op.join(SCRIPT_PATH, 'pipeline', sample_data_dir)
+        sample_data_zip_base = op.join(app.config['UPLOADS_DIRECTORY'], sample_data_dir)
         make_archive(sample_data_zip_base, format="zip", root_dir=sample_data_path)
 
-        return send_from_directory(app.config['UPLOADS_DIRECTORY'], "{0}.zip".format(sample_data_file))
+        return send_from_directory(app.config['UPLOADS_DIRECTORY'], "{0}.zip".format(sample_data_dir))
 
     return app
 
