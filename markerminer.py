@@ -183,9 +183,8 @@ If you use MarkerMiner in your research, please cite us:
 
 Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I. E., 
 DeSmet, R., Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) 
-MarkerMiner 1.0: A new bioinformatic workflow and application for 
-phylogenetic marker development using angiosperm transcriptomes. 
-Applications in Plant Sciences X: XX-XX
+MarkerMiner 1.0: A new application for phylogenetic marker development 
+using angiosperm transcriptomes. Applications in Plant Sciences X: XX-XX
     """.format(cmd, result_url, download_url)
 
     mandrill.send_email(
