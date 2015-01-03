@@ -22,7 +22,7 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, IntegerField, FloatField, SelectField, \
     FieldList, FormField, SubmitField, ValidationError, validators
 from wtforms.widgets import FileInput as _FileInput
-from wtforms.validators import Required
+from wtforms.validators import Email, Required, Optional
 from wtforms.compat import string_types
 
 from werkzeug.utils import secure_filename
@@ -85,11 +85,12 @@ def regexp(regex, flags=0):
 
 
 class JobSubmitForm(Form):
-    fileupload = MultiFileField('Input FASTA file(s). <a href="download_sample_data">Download sample dataset</a>', validators=[
-        FileRequired(),
-        FileAllowed(ALLOWED_EXTENSIONS, 'Plain-text FASTA file(s) only!'),
-        regexp(u'(?=.*-)[a-zA-Z0-9-]+')
-    ])
+    fileupload = MultiFileField('Input FASTA file(s). <a href="download_sample_data">Download sample dataset</a>', \
+        validators=[
+            FileRequired(),
+            FileAllowed(ALLOWED_EXTENSIONS, 'Plain-text FASTA file(s) only!'),
+            regexp(u'(?=.*-)[a-zA-Z0-9-]+')
+        ])
 
     singleCopyReference = SelectField(u'Select single copy transcript reference', \
         choices=list(ORGANISMS))
@@ -105,7 +106,10 @@ class JobSubmitForm(Form):
     cpus = IntegerField('Number of CPUs to use', [validators.NumberRange(min=1, max=cpu_count())])
 
     email = StringField('Email address (to send notification)', \
-    [validators.Email(message='Please provide a valid email address')])
+        validators=[
+            Optional(),
+            Email(message='Please provide a valid email address')
+        ])
 
     submit_button = SubmitField('Submit Job')
 
@@ -132,11 +136,12 @@ def build_job_cmd(form, filePaths, upload_dir, results_dir, debug=False):
         '-cpus', form.cpus.data, \
         '-outputDirPath', results_dir, \
         '-outputFile', 'single_copy_genes.txt', \
-        '-logfileName', 'pipeline_log.txt', \
-        '-email', '"{0}"'.format(form.email.data)]
+        '-logfileName', 'pipeline_log.txt']
+    if form.email.data:
+        job_cmd.extend(['-email', '"{0}"'.format(form.email.data)])
     if debug:
         job_cmd.append('-debug')
-    return " ".join(str(x) for x in job_cmd)
+    return ' '.join(str(x) for x in job_cmd)
 
 
 def build_transcript_files_list(files, dir):
@@ -160,24 +165,34 @@ def upload_files(form, dir):
     return build_transcript_files_list(files, dir)
 
 
+def get_result_urls(job_id):
+    output_basename = '{0}-output'.format(job_id)
+    result_url = op.join(request.url_root, 'results', output_basename)
+    download_url = op.join(request.url_root, 'results', 'download', \
+        '{0}.zip'.format(output_basename))
+
+    return result_url, download_url
+
+
 def submit_job(cmd):
     subprocess.Popen(shlex.split(cmd), env=os.environ)
     return
 
 
-def send_email(mandrill, email, result_url, download_url, cmd):
+def send_email(mandrill, email, job_id):
+    result_url, download_url = get_result_urls(job_id)
+
     subject = 'MarkerMiner pipeline status: Submitted'
     email_text = """
 Thank you for using the MarkerMiner pipeline.
-{0}
 
-While the job is in progress, intermediate results and logs can be viewed here: {1}
+While the job is in progress, intermediate results and logs can be viewed here: {0}
 
 Once the job has run to completion you should receive an email notification.
 At this point, the above link will be become inactivated.
 
 List of putative single copy genes and supporting output files 
-(in zip format) can be downloaded from here: {2}
+(in zip format) can be downloaded from here: {1}
 
 If you use MarkerMiner in your research, please cite us:
 
@@ -185,7 +200,7 @@ Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I. E.,
 DeSmet, R., Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) 
 MarkerMiner 1.0: A new application for phylogenetic marker development 
 using angiosperm transcriptomes. Applications in Plant Sciences X: XX-XX
-    """.format(cmd, result_url, download_url)
+    """.format(result_url, download_url)
 
     mandrill.send_email(
         to = [{ 'email' : email }], 
@@ -209,26 +224,18 @@ def create_app(configfile=None):
             mkdir_p(app.config['UPLOADS_DIRECTORY'])
             UPLOADS_DIRECTORY = mkdtemp(dir=app.config['UPLOADS_DIRECTORY'])
             RESULTS_DIRECTORY = "{0}-output".format(UPLOADS_DIRECTORY)
+            filePaths = upload_files(form, UPLOADS_DIRECTORY)
             debug = app.config['DEBUG']
 
-            filePaths = upload_files(form, UPLOADS_DIRECTORY)
             cmd = build_job_cmd(form, filePaths, UPLOADS_DIRECTORY, RESULTS_DIRECTORY, debug=debug)
-    
-            email = form.email.data
-            output_basename = '{0}-output'.format(op.basename(UPLOADS_DIRECTORY))
-            result_url = op.join(request.url_root, 'results', output_basename)
-            download_url = op.join(request.url_root, 'results', 'download', \
-                '{0}.zip'.format(output_basename))
-
-            # submit job and send email
             submit_job(cmd)
-            _cmd = cmd if debug else ''
-            send_email(mandrill, email, result_url, download_url, _cmd)
 
-            return redirect(
-                url_for('submit', email=email, result_url=result_url, \
-                        download_url=download_url)
-            )
+            job_id = op.basename(UPLOADS_DIRECTORY)
+            email = form.email.data if form.email.data else ''
+            if email != '':
+                send_email(mandrill, email, job_id)
+
+            return redirect(url_for('status', job_id=job_id))
 
         return render_template('index.html', form=form)
 
@@ -236,12 +243,12 @@ def create_app(configfile=None):
     def help():
         return render_template('help.html')
 
-    @app.route('/submit')
-    def submit():
-        email, result_url, download_url = request.args['email'], \
-            request.args['result_url'], request.args['download_url']
-        
-        return render_template('submit.html', email=email, result_url=result_url, \
+    @app.route('/status')
+    def status():
+        job_id = request.args['job_id']
+        result_url, download_url = get_result_urls(job_id)
+
+        return render_template('status.html', result_url=result_url, \
             download_url=download_url)
 
     @app.route('/results/<path:path>')
