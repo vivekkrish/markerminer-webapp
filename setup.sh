@@ -19,8 +19,36 @@ WEB_INSTALL_DIR=$1
 HTTPD_DIR=$2
 PUBLIC_IP_ADDRESS=$3
 
-## set up virtualhost configuration
+## Clone webapp repository into web accessible directory
+git clone --recursive https://bitbucket.org/vivekkrish/markerminer-webapp.git $WEB_INSTALL_DIR
+cd $WEB_INSTALL_DIR
+
+## Install dependencies using pip
+pip install -r requirements.txt
+
+## Install mod_wsgi (against python2.7)
+cd ~/ && mkdir Downloads && cd Downloads
+wget https://github.com/GrahamDumpleton/mod_wsgi/archive/4.4.8.tar.gz
+tar -zxf 4.4.8.tar.gz
+cd mod_wsgi-4.4.8/
+./configure --with-apxs=/usr/sbin/apxs --with-python=/usr/local/bin/python
+make
+make install
+
+## Load WSGI module
+cp -pr contrib/httpd/conf.d/wsgi.conf /etc/httpd/conf.d/.
+
+## Set up virtualhost configuration
 sed -e "s:__WEB_INSTALL_DIR__:$WEB_INSTALL_DIR:g" \
     -e "s:__PUBLIC_IP_ADDRESS__:$PUBLIC_IP_ADDRESS:g" \
     contrib/httpd/conf.d/markerminer.conf \
     > $HTTPD_DIR/conf.d/markerminer.conf
+
+## Update httpd sysconfig script
+cp -pr /etc/sysconfig/httpd{,.orig}
+cat contrib/sysconfig/httpd >> /etc/sysconfig/httpd
+
+## Restart apache
+service httpd graceful
+
+

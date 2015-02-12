@@ -1,0 +1,14 @@
+### Installation
+
+## Follow the steps outlined below to set up a web accessible area to deploy the webapp:
+
+## Retrieve the public IP address of your machine
+dig +short myip.opendns.com @resolver1.opendns.com
+
+## Run the setup script
+## This takes 3 parameters: webapp dir, path to httpd and the public IP address of machine
+./setup.sh /var/www/markerminer /path/to/httpd xxx.xxx.xxx.xxx
+
+## Once setup is completed and apache is restarted, 
+## navigate to web-browser and type in the IP address 
+## of the machine to access the webapp
