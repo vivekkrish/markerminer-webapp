@@ -1,20 +1,22 @@
 #!/bin/bash
 
 ## initialize markerminer environment
-WEB_INSTALL_DIR=/var/www/markerminer
 MARKERMINER_REPO="https://bitbucket.org/vivekkrish/markerminer-webapp.git"
+WEB_INSTALL_DIR=/var/www/markerminer
 HTTPD_DIR=/etc/httpd
 PUBLIC_IP_ADDRESS=`dig +short myip.opendns.com @resolver1.opendns.com`
 
-## clone repo if not exists
+## clone repo if local copy not exists, else
 if [ ! -d "$MARKERMINER_DIR" ]; then
     git clone --recursive $MARKERMINER_REPO $WEB_INSTALL_DIR
-else
-    git pull
 fi
 
-## set up virtualhost config
+## if local copy exists, pull remote changes and update pipeline submodule
 cd $WEB_INSTALL_DIR
+git pull origin master
+git submodule update --recursive
+
+## set up virtualhost config
 sed -e "s:__WEB_INSTALL_DIR__:$WEB_INSTALL_DIR:g" \
     -e "s:__PUBLIC_IP_ADDRESS__:$PUBLIC_IP_ADDRESS:g" \
     contrib/httpd/conf.d/markerminer.conf \
