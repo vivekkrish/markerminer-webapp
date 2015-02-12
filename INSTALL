@@ -2,12 +2,21 @@
 
 ## Follow the steps outlined below to set up a web accessible area to deploy the webapp:
 
-## Retrieve the public IP address of your machine
+## Install mod_wsgi against python2.7
+cd ~/ && mkdir Downloads && cd Downloads
+wget https://github.com/GrahamDumpleton/mod_wsgi/archive/4.4.8.tar.gz
+tar -zxf 4.4.8.tar.gz
+cd mod_wsgi-4.4.8/
+./configure --with-apxs=/usr/sbin/apxs --with-python=/usr/local/bin/python
+make
+make install
+
+## Retrieve the public IP address (xxx.xxx.x.xxx) of your machine
 dig +short myip.opendns.com @resolver1.opendns.com
 
 ## Run the setup script
 ## This takes 3 parameters: webapp dir, path to httpd and the public IP address of machine
-./setup.sh /var/www/markerminer /path/to/httpd xxx.xxx.xxx.xxx
+./setup.sh /var/www/markerminer /path/to/httpd xxx.xxx.x.xxx
 
 ## Once setup is completed and apache is restarted, 
 ## navigate to web-browser and type in the IP address 

@@ -26,16 +26,7 @@ cd $WEB_INSTALL_DIR
 ## Install dependencies using pip
 pip install -r requirements.txt
 
-## Install mod_wsgi (against python2.7)
-cd ~/ && mkdir Downloads && cd Downloads
-wget https://github.com/GrahamDumpleton/mod_wsgi/archive/4.4.8.tar.gz
-tar -zxf 4.4.8.tar.gz
-cd mod_wsgi-4.4.8/
-./configure --with-apxs=/usr/sbin/apxs --with-python=/usr/local/bin/python
-make
-make install
-
-## Load WSGI module
+## Set up mod_wsgi module configuration
 cp -pr contrib/httpd/conf.d/wsgi.conf /etc/httpd/conf.d/.
 
 ## Set up virtualhost configuration
@@ -50,5 +41,3 @@ cat contrib/sysconfig/httpd >> /etc/sysconfig/httpd
 
 ## Restart apache
 service httpd graceful
-
-
