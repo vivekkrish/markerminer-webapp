@@ -6,6 +6,9 @@ WEB_INSTALL_DIR=/var/www/markerminer
 HTTPD_DIR=/etc/httpd
 PUBLIC_IP_ADDRESS=`dig +short myip.opendns.com @resolver1.opendns.com`
 
+## change permissions on WEB_INSTALL_DIR
+chmod 777 $WEB_INSTALL_DIR
+
 ## clone repo if local copy not exists, else
 if [ ! -d "$MARKERMINER_DIR" ]; then
     git clone --recursive $MARKERMINER_REPO $WEB_INSTALL_DIR
