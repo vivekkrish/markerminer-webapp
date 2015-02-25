@@ -20,6 +20,13 @@ Please refer to [INSTALL](https://bitbucket.org/vivekkrish/markerminer-webapp/sr
 ### Usage
 ---
 ```
+## Clone the repository locally
+git clone --recursive https://bitbucket.org/vivekkrish/markerminer-webapp
+cd markerminer-webapp
+
+## Edit the site.cfg and set the uploads directory
+## This directory is used by the webapp to store and process uploaded transcript files
+
 ## Run the following command to start MarkerMiner webapp
 ## This initiates a live reloading service, serving the webapp
 ## This server also listens for code changes and appropriately auto-reloads the application

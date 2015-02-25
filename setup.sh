@@ -23,6 +23,11 @@ PUBLIC_IP_ADDRESS=$3
 git clone --recursive https://bitbucket.org/vivekkrish/markerminer-webapp.git $WEB_INSTALL_DIR
 cd $WEB_INSTALL_DIR
 
+## Set up site.cfg
+sed -e "s:__WEB_INSTALL_DIR__:$WEB_INSTALL_DIR:g" \
+    contrib/site.cfg.template \
+    > site.cfg
+
 ## Install dependencies using pip
 pip install -r requirements.txt
 
