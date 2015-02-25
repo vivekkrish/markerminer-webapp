@@ -1,6 +1,6 @@
 ## markerminer-webapp
 ---
-MarkerMiner is a bioinformatic workflow and [webapp](https://bitbucket.org/vivekkrish/markerminer-webapp) that was designed 
+MarkerMiner is a bioinformatic [workflow](https://bitbucket.org/srikarchamala/markerminer) and [webapp](https://bitbucket.org/vivekkrish/markerminer-webapp) designed 
 to identify putatively orthologous single-copy nuclear loci present in two or more user-provided angiosperm transcriptome 
 assemblies (e.g. [OneKP](http://onekp.com) transcriptome assemblies). MarkerMiner outputs detailed tabular results and 
 sequence alignments for downstream assessments of phylogenetic utility, locus selection and intron-exon boundary prediction, 
@@ -12,6 +12,8 @@ Please refer to [INSTALL](https://bitbucket.org/vivekkrish/markerminer-webapp/sr
 
 ### Dependencies
 
+* Apache httpd
+* Apache mod_wsgi module
 * Python (>= 2.7)
     * Modules: Please refer to pip [requirements.txt](https://bitbucket.org/vivekkrish/markerminer-webapp/src/HEAD/requirements.txt?at=master) for list of required modules
 
@@ -27,7 +29,5 @@ $ python markerminer.py
  * Running on http://0.0.0.0:5000/
  * Restarting with reloader
 
-### The app has been productionized using Apache + mod_wsgi
-### One of the pre-requisites for this is the installation of the mod_wsgi Apache module
-### Run the ./setup.sh script to deploy the webapp in production mode
+### To deploy webapp in production mode, run the ./setup.sh script
 ```

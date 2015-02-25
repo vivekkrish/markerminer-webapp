@@ -15,9 +15,9 @@ make install
 dig +short myip.opendns.com @resolver1.opendns.com
 
 ## Run the setup script
-## This takes 3 parameters: webapp dir, path to httpd and the public IP address of machine
+## Takes 3 parameters: webapp dir, path to httpd and the public IP address of machine
 ./setup.sh /var/www/markerminer /path/to/httpd xxx.xxx.x.xxx
 
-## Once setup is completed and apache is restarted, 
-## navigate to web-browser and type in the IP address 
+## Once setup is completed and apache is restarted,
+## navigate to web-browser and type in the IP address
 ## of the machine to access the webapp
