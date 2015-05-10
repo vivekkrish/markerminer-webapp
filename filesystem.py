@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from genericpath import isfile
 import os
 from os.path import join, basename, splitext, isdir, dirname
@@ -40,7 +42,7 @@ class File(Node):
         return dirname(self.path)
 
 class Folder(Node):
-    
+
     def __init__(self, root, path):
         super(Folder, self).__init__(root, path)
         self.files = []

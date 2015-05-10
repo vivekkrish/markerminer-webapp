@@ -2,23 +2,26 @@
 
 {% block content %}
 <div class="container">
-  Job has been submitted successfully!<br /><br />
   <p>
-      While the job is in progress, intermediate results and logs can be viewed here: <a href="{{ result_url }}">{{ result_url }}</a>
+      Job submitted successfully!<br />
+      <p class="well">
+          While the job is in progress, intermediate results and logs can be viewed here:<br />
+          <a href="{{ result_url }}">{{ result_url }}</a>
+          <br /><br />
+          Once the job has run to completion you should receive an email notification. At this point, the above link will become inactivated.
+          <br /><br />
+          List of putative single copy genes and supporting output files (in zip format) can be downloaded from here:<br />
+          <a href="{{ download_url }}">{{ download_url }}</a>
+      </p>
   </p>
   <p>
-      Once the job has run to completion you should receive an email notification.<br />
-      At this point, the above link will become inactivated.<br /><br />
-
-      List of putative single copy genes and supporting output files (in zip format) can be downloaded from here: <a href="{{ download_url }}">{{ download_url }}</a>
-  </p>
-  <p>
-      If you use MarkerMiner in your research, please cite us:<br /><br />
-
-      Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I.E.,<br />
-      DeSmet, R., Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2014) <br />
-      MarkerMiner 1.0: A new application for phylogenetic marker development <br />
-      using angiosperm transcriptomes. <cite><em>Applications in Plant Sciences</em></cite> X: XX-XX
+      If you use MarkerMiner in your research, please cite us:<br />
+  <blockquote>
+    Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I.E., <br />
+    DeSmet, R., Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2015) <a href="http://www.bioone.org/doi/abs/10.3732/apps.1400115" target="_blank">MarkerMiner 1.0: <br />
+    A new application for phylogenetic marker development using angiosperm transcriptomes.</a> <br />
+    <cite><em>Applications in Plant Sciences</em></cite> <strong>3(4)</strong>: 1400115.
+  </blockquote>
   </p>
 </div>
 {% endblock %}

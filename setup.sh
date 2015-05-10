@@ -32,7 +32,7 @@ sed -e "s:__WEB_INSTALL_DIR__:$WEB_INSTALL_DIR:g" \
 pip install -r requirements.txt
 
 ## Set up mod_wsgi module configuration
-cp -pr contrib/httpd/conf.d/wsgi.conf /etc/httpd/conf.d/.
+cp -pr contrib/httpd/conf.d/wsgi.conf $HTTPD_DIR/conf.d/.
 
 ## Set up virtualhost configuration
 sed -e "s:__WEB_INSTALL_DIR__:$WEB_INSTALL_DIR:g" \
