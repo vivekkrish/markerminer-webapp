@@ -20,7 +20,7 @@ HTTPD_DIR=$2
 PUBLIC_IP_ADDRESS=$3
 
 ## Clone webapp repository into web accessible directory
-git clone --recursive https://bitbucket.org/vivekkrish/markerminer-webapp.git $WEB_INSTALL_DIR
+git clone --recursive https://github.com/vivekkrish/markerminer-webapp.git $WEB_INSTALL_DIR
 cd $WEB_INSTALL_DIR
 
 ## Set up site.cfg

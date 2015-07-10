@@ -2,7 +2,7 @@
 ---
 MarkerMiner is an easy-to-use, fully automated, open-access bioinformatic
 [workflow](https://bitbucket.org/srikarchamala/markerminer) and
-[web application](https://bitbucket.org/vivekkrish/markerminer-webapp) for
+[web application](https://github.com/vivekkrish/markerminer-webapp) for
 effective discovery of SCN loci in flowering plants angiosperms
 (flowering plants), from user-provided angiosperm transcriptome
 assemblies (e.g. <a href="http://onekp.com" target="_blank">OneKP
@@ -13,12 +13,12 @@ prediction, and primer or probe development.
 
 View the user manual [here](https://bitbucket.org/srikarchamala/markerminer).
 
-Please refer to [INSTALL](https://bitbucket.org/vivekkrish/markerminer-webapp/src/HEAD/INSTALL?at=master) for detailed instructions.
+Please refer to [INSTALL](https://github.com/vivekkrish/markerminer-webapp/blob/master/INSTALL) for detailed instructions.
 
 ### Dependencies
 
 * Python (>= 2.7)
-    * Modules: Please refer to pip [requirements.txt](https://bitbucket.org/vivekkrish/markerminer-webapp/src/HEAD/requirements.txt?at=master) for list of required modules
+    * Modules: Please refer to pip [requirements.txt](https://github.com/vivekkrish/markerminer-webapp/blob/master/requirements.txt) for list of required modules
 * Apache httpd (http://httpd.apache.org)
 * Apache mod_wsgi module (https://code.google.com/p/modwsgi/)
 
@@ -26,7 +26,7 @@ Please refer to [INSTALL](https://bitbucket.org/vivekkrish/markerminer-webapp/sr
 ---
 ```
 ## Clone the repository locally
-$ git clone --recursive https://bitbucket.org/vivekkrish/markerminer-webapp
+$ git clone --recursive https://github.com/vivekkrish/markerminer-webapp.git
 $ cd markerminer-webapp
 
 ## Edit the site.cfg and set the UPLOADS_DIRECTORY

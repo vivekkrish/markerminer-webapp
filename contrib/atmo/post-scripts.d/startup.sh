@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## initialize markerminer environment
-MARKERMINER_REPO="https://bitbucket.org/vivekkrish/markerminer-webapp.git"
+MARKERMINER_REPO="https://github.com/vivekkrish/markerminer-webapp.git"
 WEB_INSTALL_DIR=/var/www/markerminer
 HTTPD_DIR=/etc/httpd
 PUBLIC_IP_ADDRESS=`dig +short myip.opendns.com @resolver1.opendns.com`
