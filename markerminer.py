@@ -145,9 +145,9 @@ def create_app(configfile=None):
         sample_data_dir = 'Sample_Data'
         sample_data_path = op.join(SCRIPT_PATH, 'pipeline', sample_data_dir)
         sample_data_zip_base = op.join(app.config['UPLOADS_DIRECTORY'], sample_data_dir)
-        make_archive(sample_data_zip_base, format="zip", root_dir=sample_data_path)
+        make_archive(sample_data_zip_base, format="gztar", root_dir=sample_data_path)
 
-        return send_from_directory(app.config['UPLOADS_DIRECTORY'], "{0}.zip".format(sample_data_dir))
+        return send_from_directory(app.config['UPLOADS_DIRECTORY'], "{0}.tar.gz".format(sample_data_dir))
 
     return app
 
