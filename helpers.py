@@ -84,7 +84,7 @@ def get_result_urls(request, job_id):
     output_basename = '{0}-output'.format(job_id)
     result_url = op.join(request.url_root, 'results', output_basename)
     download_url = op.join(request.url_root, 'results', 'download', \
-        '{0}.zip'.format(output_basename))
+        '{0}.tar.gz'.format(output_basename))
 
     return result_url, download_url
 
