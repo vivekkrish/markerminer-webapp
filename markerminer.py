@@ -128,7 +128,6 @@ def create_app(configfile=None):
         if path.endswith('-output'):
             result_targz = '{0}.tar.gz'.format(path)
             result_path = op.join(uploads_dir, result_targz)
-	    print >> sys.stderr, result_targz
             if op.exists(result_path):
                 return redirect(url_for('download', path=result_targz))
 
