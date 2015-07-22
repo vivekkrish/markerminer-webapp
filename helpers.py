@@ -80,16 +80,14 @@ def upload_files(form, dir):
     return
 
 
-def get_result_urls(request, job_id):
+def get_result_url(request, job_id):
     output_basename = '{0}-output'.format(job_id)
     result_url = op.join(request.url_root, 'results', output_basename)
-    download_url = op.join(request.url_root, 'results', 'download', \
-        '{0}.tar.gz'.format(output_basename))
 
-    return result_url, download_url
+    return result_url
 
 
-def send_email(mandrill, email, result_url, download_url):
+def send_email(mandrill, email, result_url):
     subject = 'MarkerMiner pipeline status: Submitted'
     email_text = """
 Thank you for using the MarkerMiner pipeline.
@@ -97,10 +95,7 @@ Thank you for using the MarkerMiner pipeline.
 While the job is in progress, intermediate results and logs can be viewed here: {0}
 
 Once the job has run to completion you should receive an email notification.
-At this point, the above link will be become inactivated.
-
-List of putative single copy genes and supporting output files
-(in zip format) can be downloaded from here: {1}
+At this point, the above link will trigger the download of the pipeline output (in tar.gz.format).
 
 If you use MarkerMiner in your research, please cite us:
 
@@ -108,7 +103,7 @@ Chamala, S., Garcia, N., Godden, G.T., Krishnakumar, V., Jordon-Thaden, I. E.,
 DeSmet, R., Barbazuk, W. B., Soltis, D.E., Soltis, P.S. (2015)
 MarkerMiner 1.0: A new application for phylogenetic marker development
 using angiosperm transcriptomes. Applications in Plant Sciences, 3(4): 1400115.
-    """.format(result_url, download_url)
+    """.format(result_url)
 
     mandrill.send_email(
         to = [{ 'email' : email }],

@@ -26,7 +26,7 @@ from wtforms.validators import Email, Required, Optional
 from wtforms.compat import string_types
 
 from helpers import regexp, mkdir_p, upload_files, build_job_cmd, \
-    send_email, get_result_urls, SCRIPT_PATH, ALLOWED_EXTENSIONS, ORGANISMS
+    send_email, get_result_url, SCRIPT_PATH, ALLOWED_EXTENSIONS, ORGANISMS
 
 from filesystem import Folder, File
 from action import *
@@ -99,10 +99,10 @@ def create_app(configfile=None):
             subprocess.Popen(shlex.split(cmd), env=os.environ)
 
             job_id = op.basename(UPLOADS_DIRECTORY)
-            result_url, download_url = get_result_urls(request, job_id)
+            result_url = get_result_url(request, job_id)
             email = form.email.data if form.email.data else ''
             if email != '':
-                send_email(mandrill, email, result_url, download_url)
+                send_email(mandrill, email, result_url)
 
             return redirect(url_for('status', job_id=job_id))
 
@@ -114,27 +114,38 @@ def create_app(configfile=None):
 
     @app.route('/status/<job_id>')
     def status(job_id):
-        result_url, download_url = get_result_urls(request, job_id)
+        result_url = get_result_url(request, job_id)
 
-        return render_template('status.html', result_url=result_url, \
-            download_url=download_url)
+        return render_template('status.html', result_url=result_url)
 
     @app.route('/results/<path:path>')
     def browser(path=None):
-        path_join = op.join(app.config['UPLOADS_DIRECTORY'], path)
+	uploads_dir = app.config['UPLOADS_DIRECTORY']
+        path_join = op.join(uploads_dir, path)
+        
+        # if path is toplevel output dir, check for result tarball
+        # if tarball exists, trigger output download
+        if path.endswith('-output'):
+            result_targz = '{0}.tar.gz'.format(path)
+            result_path = op.join(uploads_dir, result_targz)
+	    print >> sys.stderr, result_targz
+            if op.exists(result_path):
+                return redirect(url_for('download', path=result_targz))
+
+        # if result file not ready yet, let user browse the run directory
         if op.isdir(path_join):
-            folder = Folder(app.config['UPLOADS_DIRECTORY'], path)
+            folder = Folder(uploads_dir, path)
             folder.read()
             return render_template('folder.html', folder=folder)
         else:
-            my_file = File(app.config['UPLOADS_DIRECTORY'], path)
+            my_file = File(uploads_dir, path)
             context = my_file.apply_action(View)
-            folder = Folder(app.config['UPLOADS_DIRECTORY'], my_file.get_path())
+            folder = Folder(uploads_dir, my_file.get_path())
             if context == None:
                 return render_template('file_unreadable.html', folder=folder)
             return render_template('file_view.html', text=context['text'], file=my_file, folder=folder)
 
-    @app.route('/results/download/<path:path>')
+    @app.route('/download/<path:path>')
     def download(path=''):
         return send_from_directory(app.config['UPLOADS_DIRECTORY'], path)
 
@@ -147,7 +158,7 @@ def create_app(configfile=None):
         sample_data_zip_base = op.join(app.config['UPLOADS_DIRECTORY'], sample_data_dir)
         make_archive(sample_data_zip_base, format="gztar", root_dir=sample_data_path)
 
-        return send_from_directory(app.config['UPLOADS_DIRECTORY'], "{0}.tar.gz".format(sample_data_dir))
+        return redirect(url_for('download', path='{0}.tar.gz'.format(sample_data_dir)))
 
     return app
 

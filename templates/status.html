@@ -6,12 +6,9 @@
       Job submitted successfully!<br />
       <p class="well">
           While the job is in progress, intermediate results and logs can be viewed here:<br />
-          <a href="{{ result_url }}">{{ result_url }}</a>
+          <a target="_blank" href="{{ result_url }}">{{ result_url }}</a>
           <br /><br />
-          Once the job has run to completion you should receive an email notification. At this point, the above link will become inactivated.
-          <br /><br />
-          List of putative single copy genes and supporting output files (in zip format) can be downloaded from here:<br />
-          <a href="{{ download_url }}">{{ download_url }}</a>
+          Once the job has run to completion, the above link will trigger the download of the pipeline output (in tar.gz.format).
       </p>
   </p>
   <p>
