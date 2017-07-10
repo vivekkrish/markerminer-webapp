@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import os.path as op
 import shlex
 import subprocess
@@ -11,10 +10,9 @@ from tempfile import mkdtemp
 from multiprocessing import cpu_count
 
 from flask import Flask, render_template, request, redirect, \
-    send_from_directory, url_for, flash
+    send_from_directory, url_for
 from flask_appconfig import AppConfig
 from flask_bootstrap import Bootstrap
-from flask.ext.mandrill import Mandrill
 
 from flask_wtf import Form
 from flask_wtf.file import FileField, FileAllowed, FileRequired
@@ -22,14 +20,14 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, IntegerField, FloatField, SelectField, \
     FieldList, FormField, SubmitField, ValidationError, validators
 from wtforms.widgets import FileInput as _FileInput
-from wtforms.validators import Email, Required, Optional
-from wtforms.compat import string_types
+from wtforms.validators import Email, Optional
 
+from sendmail import EmailClient
 from helpers import regexp, mkdir_p, upload_files, build_job_cmd, \
-    send_email, get_result_url, SCRIPT_PATH, ALLOWED_EXTENSIONS, ORGANISMS
+    get_result_url, SCRIPT_PATH, ALLOWED_EXTENSIONS, ORGANISMS
 
 from filesystem import Folder, File
-from action import *
+from action import View
 
 
 class FileInput(_FileInput):
@@ -81,7 +79,9 @@ def create_app(configfile=None):
     app = Flask(__name__)
     AppConfig(app, configfile)
     Bootstrap(app)
-    mandrill = Mandrill(app)
+    email_handler = EmailClient(email_from=app.config['EMAIL_DEFAULT_FROM'], \
+                                from_name=app.config['EMAIL_FROM_NAME'], \
+                                api_key=app.config['EMAIL_API_KEY'])
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
@@ -100,9 +100,9 @@ def create_app(configfile=None):
 
             job_id = op.basename(UPLOADS_DIRECTORY)
             result_url = get_result_url(request, job_id)
-            email = form.email.data if form.email.data else ''
-            if email != '':
-                send_email(mandrill, email, result_url)
+            email_to = form.email.data if form.email.data else ''
+            if email_to != '':
+                email_handler.send_email(email_to, result_url)
 
             return redirect(url_for('status', job_id=job_id))
 
@@ -120,9 +120,9 @@ def create_app(configfile=None):
 
     @app.route('/results/<path:path>')
     def browser(path=None):
-	uploads_dir = app.config['UPLOADS_DIRECTORY']
+        uploads_dir = app.config['UPLOADS_DIRECTORY']
         path_join = op.join(uploads_dir, path)
-        
+
         # if path is toplevel output dir, check for result tarball
         # if tarball exists, trigger output download
         if path.endswith('-output'):

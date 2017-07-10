@@ -5,9 +5,10 @@ SECRET_KEY = '\xb4jzK\xa1\xf9\xaa\xc8D\xb9X\xaa\xd4\x9b\xef\xd6P\xef\x18-\x0f\xd
 ## uploads dir location
 UPLOADS_DIRECTORY = '__WEB_INSTALL_DIR__/uploads'
 
-## email sending (mandrill) api key
-MANDRILL_API_KEY = 'eIl4IvkTtDSqJDHiQuIbWw'
-MANDRILL_DEFAULT_FROM = 'markerminer@gmail.com'
+## email sending config
+EMAIL_API_KEY = '0f50c712-2e60-44a4-9b5c-fe01cae252ff'
+EMAIL_DEFAULT_FROM = 'markerminer@gmail.com'
+EMAIL_FROM_NAME = 'MarkerMiner Admin'
 
 ## google analytics
 GA_TRACKER = 'UA-57261652-1'
